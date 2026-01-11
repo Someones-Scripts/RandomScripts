@@ -1,0 +1,50 @@
+local HttpService = game:GetService("HttpService")
+local webhookUrl = "https://webhook.site/c91e7503-3172-you-thought-i-was-gonna-give-you-my-webhook?"  -- Your Webhook URL
+
+local function sendToWebhook(data)
+    -- Convert the data table into a JSON string
+    local jsonData = HttpService:JSONEncode(data)
+    
+    -- Send the POST request to the webhook
+    local success, response = pcall(function()
+        return HttpService:PostAsync(webhookUrl, jsonData, Enum.HttpContentType.ApplicationJson)
+    end)
+    
+    -- Check if the request was successful
+    if success then
+        print("Data sent successfully to webhook")
+    else
+        warn("Failed to send data to webhook:", response)
+    end
+end
+
+local function convertModelToWebhookData(model)
+    -- Table to hold the data for the webhook
+    local webhookData = { parts = {} }
+
+    -- Iterate through each part in the model
+    for _, part in ipairs(model:GetDescendants()) do
+        if part:IsA("BasePart") then
+            -- Determine part type (Part or Truss)
+            local partType = "Part"  -- You can add logic here to check if it's a "Truss" instead
+
+            -- Prepare part data for the webhook
+            local partData = {
+                type = partType,         -- Part type: "Part" or "Truss"
+                cframe = tostring(part.CFrame),    -- Part's CFrame (Position + Orientation) as string
+                size = {part.Size.X, part.Size.Y, part.Size.Z},  -- Part's size (Vector3 as table)
+                color = tostring(part.Color)       -- Part's color (Color3 as string)
+            }
+            
+            -- Add the part data to the table for webhook
+            table.insert(webhookData.parts, partData)
+        end
+    end
+    
+    -- Send the data to the webhook
+    sendToWebhook(webhookData)
+end
+
+-- Example usage: Convert a model into webhook data and send it
+local model = game.Workspace:WaitForChild("MyModel")  -- Replace with your model's path
+convertModelToWebhookData(model)
